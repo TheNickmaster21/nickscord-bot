@@ -43,7 +43,17 @@ func main() {
 	// 	log.Panicf("Cannot create 'ping' command: %v", err)
 	// }
 
-	session.ChannelMessageSend("559936001305214999", "We got beef :cut_of_meat:")
+	testChannel := "559936001305214999"
+
+	mes, messageErr := session.ChannelMessageSend(testChannel, "We got beef :cut_of_meat:")
+
+	if messageErr != nil {
+		log.Printf("Cannot send message: %v", messageErr)
+	} else {
+		log.Printf("Sent message: %v", mes)
+
+		session.MessageReactionAdd(mes.ChannelID, mes.ID, "1")
+	}
 
 	// Create a channel for waiting on Interrupt
 	stop := make(chan os.Signal)
