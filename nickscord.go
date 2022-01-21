@@ -32,16 +32,38 @@ func main() {
 	openErr := session.Open()
 	// If we fail to open the session, log and exit
 	if openErr != nil {
-		log.Fatalf("Cannot open the session: %v", openErr)
+		log.Printf("Cannot open the session: %v", openErr)
 	}
 
 	// When everything is over, make sure we close the session
 	defer session.Close()
 
-	// _, err := s.ApplicationCommandCreate(s.State.User.ID, "559936001305214997", "ping") // TODO Store Guild differently
-	// if err != nil {
-	// 	log.Panicf("Cannot create 'ping' command: %v", err)
-	// }
+	testGuild := os.Getenv("GUILD_ID")
+
+	_, err := session.ApplicationCommandCreate(session.State.User.ID, testGuild, &discordgo.ApplicationCommand{
+		Name:        "ping",
+		Description: "Ping, Pong",
+	})
+	if err != nil {
+		log.Fatalf("Failed to create 'ping' command: %v", err)
+	}
+
+	session.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		if i.Type == discordgo.InteractionApplicationCommand {
+			switch i.ApplicationCommandData().Name {
+			case "ping":
+				err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+					Type: discordgo.InteractionResponseChannelMessageWithSource,
+					Data: &discordgo.InteractionResponseData{
+						Content: "pong",
+					},
+				})
+				if err != nil {
+					log.Printf("Failed to respond to command: %v", err)
+				}
+			}
+		}
+	})
 
 	testChannel := "559936001305214999"
 
