@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
 	"strconv"
@@ -8,19 +9,11 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type DiceResult struct {
-	Result int
-	Bold   bool
-}
-
 // Handle a discordgo roll command interaction
 func RollInteraction(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	//dice, err := ParseDiceArguments(i.)
-	fmt.Print(i)
-
 	args := i.ApplicationCommandData().Options[0].StringValue()
 
-	dice, err := ParseDiceArguments(args)
+	parsedArgs, err := ParseDiceArguments(args)
 	if err != nil {
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -30,7 +23,7 @@ func RollInteraction(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		})
 		return
 	}
-	results, err := RollDice(dice)
+	results, err := RollArgs(parsedArgs)
 	if err != nil {
 		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -59,10 +52,15 @@ func RollInteraction(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	})
 }
 
+type Arg struct {
+	DieValue      int
+	ConstantValue int
+}
+
 //Convert a string of 'd's, numbers, and '+'s to a slice of dice to roll
 // example args: "d6", "3d13 + d4" & "78d6"
-func ParseDiceArguments(arg string) ([]int, error) {
-	dice := make([]int, 0)
+func ParseDiceArguments(arg string) ([]Arg, error) {
+	dice := make([]Arg, 0)
 
 	countingDice := true
 	numberOfDice := ""
@@ -79,13 +77,17 @@ func ParseDiceArguments(arg string) ([]int, error) {
 				return err
 			}
 		}
-		diceSizeInt, err := strconv.ParseInt(diceSize, 10, 8)
-		if err != nil {
-			return err
-		}
+		if diceSize == "" {
+			dice = append(dice, Arg{ConstantValue: int(numberOfDiceInt)})
+		} else {
+			diceSizeInt, err := strconv.ParseInt(diceSize, 10, 8)
+			if err != nil {
+				return err
+			}
 
-		for i := numberOfDiceInt; i > 0; i-- {
-			dice = append(dice, int(diceSizeInt))
+			for i := numberOfDiceInt; i > 0; i-- {
+				dice = append(dice, Arg{DieValue: int(diceSizeInt)})
+			}
 		}
 
 		countingDice = true
@@ -121,16 +123,27 @@ func ParseDiceArguments(arg string) ([]int, error) {
 	}
 }
 
-// Roll multiple dice
-func RollDice(dice []int) ([]DiceResult, error) {
-	var results = make([]DiceResult, len(dice))
+type DiceResult struct {
+	Result int
+	Bold   bool
+}
 
-	for i, die := range dice {
-		result, err := Roll(die)
-		if err != nil {
-			return nil, err
+// Roll multiple Args
+func RollArgs(args []Arg) ([]DiceResult, error) {
+	var results = make([]DiceResult, len(args))
+
+	for i, arg := range args {
+		if arg.DieValue != 0 {
+			result, err := Roll(arg.DieValue)
+			if err != nil {
+				return nil, err
+			}
+			results[i] = *result
+		} else if arg.ConstantValue != 0 {
+			results[i] = DiceResult{Result: arg.ConstantValue, Bold: false}
+		} else {
+			return nil, errors.New("invalid arg; missing DieValue and ConstantValue!")
 		}
-		results[i] = *result
 	}
 
 	return results, nil

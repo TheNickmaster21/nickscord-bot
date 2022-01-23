@@ -10,7 +10,7 @@ func TestInvalidParseDiceArguments(t *testing.T) {
 }
 
 func TestParseDiceArguments(t *testing.T) {
-	results, err := ParseDiceArguments(" d6 + 2d4+d12")
+	results, err := ParseDiceArguments(" d6 + 2d4+12")
 	if err != nil {
 		t.Errorf("Error not expected: %v", err)
 	}
@@ -18,35 +18,38 @@ func TestParseDiceArguments(t *testing.T) {
 	if length != 4 {
 		t.Errorf("Expected 4 results, got %v instead", length)
 	}
-	if results[0] != 6 {
+	if results[0].DieValue != 6 {
 		t.Errorf("Expected first die to be 6, got %v instead", length)
 	}
-	if results[1] != 4 {
+	if results[1].DieValue != 4 {
 		t.Errorf("Expected second die to be 4, got %v instead", length)
 	}
-	if results[2] != 4 {
+	if results[2].DieValue != 4 {
 		t.Errorf("Expected third die to be 4, got %v instead", length)
 	}
-	if results[3] != 12 {
+	if results[3].ConstantValue != 12 {
 		t.Errorf("Expected forth die to be 12, got %v instead", length)
 	}
 }
 
-func TestInvalidRollDice(t *testing.T) {
-	_, err := RollDice([]int{22, -3})
+func TestInvalidRollArgs(t *testing.T) {
+	_, err := RollArgs([]Arg{{DieValue: 22}, {DieValue: -3}})
 	if err == nil {
 		t.Error("Expected failure for -3")
 	}
 }
 
-func TestRollDice(t *testing.T) {
-	results, err := RollDice([]int{22, 3, 6})
+func TestRollArgs(t *testing.T) {
+	results, err := RollArgs([]Arg{{DieValue: 22}, {DieValue: 3}, {DieValue: 6}, {ConstantValue: 2}})
 	if err != nil {
 		t.Errorf("Error not expected: %v", err)
 	}
 	length := len(results)
-	if length != 3 {
+	if length != 4 {
 		t.Errorf("Expected 3 results, got %v instead", length)
+	}
+	if results[3].Result != 2 {
+		t.Errorf("Expected 2 as constant result, got %v instead", results[3].Result)
 	}
 }
 
