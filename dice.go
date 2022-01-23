@@ -69,9 +69,15 @@ func ParseDiceArguments(arg string) ([]int, error) {
 	diceSize := ""
 
 	addDice := func() error {
-		numberOfDiceInt, err := strconv.ParseInt(numberOfDice, 10, 8)
-		if err != nil {
+		var numberOfDiceInt int64
+		var err error
+		if numberOfDice == "" {
 			numberOfDiceInt = 1
+		} else {
+			numberOfDiceInt, err = strconv.ParseInt(numberOfDice, 10, 8)
+			if err != nil {
+				return err
+			}
 		}
 		diceSizeInt, err := strconv.ParseInt(diceSize, 10, 8)
 		if err != nil {
@@ -138,7 +144,7 @@ func Roll(diceSize int) (*DiceResult, error) {
 	} else if diceSize == 1 {
 		result = 1
 	} else {
-		result = rand.Intn(diceSize-1) + 1
+		result = rand.Intn(diceSize) + 1
 	}
 
 	return &DiceResult{

@@ -90,8 +90,7 @@ func main() {
 	if messageErr != nil {
 		log.Printf("Cannot send message: %v", messageErr)
 	} else {
-		log.Printf("Sent message: %v", mes)
-
+		// TODO Fix below
 		session.MessageReactionAdd(mes.ChannelID, mes.ID, "1")
 	}
 
