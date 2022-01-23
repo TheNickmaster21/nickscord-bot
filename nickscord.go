@@ -47,6 +47,22 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create 'ping' command: %v", err)
 	}
+	_, err = session.ApplicationCommandCreate(session.State.User.ID, testGuild, &discordgo.ApplicationCommand{
+		Name:        "roll",
+		Description: "Roll some dice! (e.g. /roll 3d4 + d12)",
+		Options: []*discordgo.ApplicationCommandOption{
+			{
+				Name:         "dice",
+				Type:         discordgo.ApplicationCommandOptionString,
+				Description:  "Dice to roll (e.g. \"d4\" or \"3d12 + d20\")",
+				Required:     true,
+				Autocomplete: false,
+			},
+		},
+	})
+	if err != nil {
+		log.Fatalf("Failed to create 'roll' command: %v", err)
+	}
 
 	session.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		if i.Type == discordgo.InteractionApplicationCommand {
@@ -61,13 +77,15 @@ func main() {
 				if err != nil {
 					log.Printf("Failed to respond to command: %v", err)
 				}
+			case "roll":
+				RollInteraction(s, i)
 			}
 		}
 	})
 
 	testChannel := "559936001305214999"
 
-	mes, messageErr := session.ChannelMessageSend(testChannel, "We got beef :cut_of_meat:")
+	mes, messageErr := session.ChannelMessageSend(testChannel, "What's up gamers?")
 
 	if messageErr != nil {
 		log.Printf("Cannot send message: %v", messageErr)
@@ -86,5 +104,5 @@ func main() {
 	// Cleanup tasks now that we recieved os.Interrupt
 	log.Println("Gracefully shutdowning")
 
-	session.ChannelMessageSend("559936001305214999", "Goodbye cruel world!")
+	session.ChannelMessageSend(testChannel, "I'm going to bed!")
 }
