@@ -13,10 +13,12 @@ var session *discordgo.Session
 
 func init() {
 	// Load .env file
-	godotenv.Load(".env")
+	err := godotenv.Load(".env")
+	if err != nil {
+		log.Fatalf("Missing .env file: %v", err)
+	}
 
 	botSecret := os.Getenv("BOT_SECRET")
-	var err error
 	session, err = discordgo.New("Bot " + botSecret) // TODO Store this secret differently
 	if err != nil {
 		log.Fatalf("Invalid bot parameters: %v", err)
