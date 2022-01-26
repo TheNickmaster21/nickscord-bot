@@ -18,13 +18,11 @@ RUN go build -o /nickscord-bot
 ##
 ## Deploy
 ##
-FROM gcr.io/distroless/base-debian10
+FROM gcr.io/distroless/base-debian10 AS deploy
 
 WORKDIR /
 
 COPY --from=build /nickscord-bot /nickscord-bot
-
-COPY .env .env
 
 USER nonroot:nonroot
 

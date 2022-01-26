@@ -4,6 +4,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"syscall"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/joho/godotenv"
@@ -12,14 +13,15 @@ import (
 var session *discordgo.Session
 
 func init() {
-	// Load .env file
+	// Load (optional) .env file
 	err := godotenv.Load(".env")
-	if err != nil {
-		log.Fatalf("Missing .env file: %v", err)
+	if err != nil && !os.IsNotExist(err) {
+		// .env is optional; only fatal if something goes wrong reading the file
+		log.Fatalf("Error reading .env file: %v", err)
 	}
 
 	botSecret := os.Getenv("BOT_SECRET")
-	session, err = discordgo.New("Bot " + botSecret) // TODO Store this secret differently
+	session, err = discordgo.New("Bot " + botSecret)
 	if err != nil {
 		log.Fatalf("Invalid bot parameters: %v", err)
 	}
@@ -87,7 +89,7 @@ func main() {
 
 	testChannel := "559936001305214999"
 
-	mes, messageErr := session.ChannelMessageSend(testChannel, "What's up gamers?")
+	mes, messageErr := session.ChannelMessageSend(testChannel, "What's up friends?")
 
 	if messageErr != nil {
 		log.Printf("Cannot send message: %v", messageErr)
@@ -97,9 +99,9 @@ func main() {
 	}
 
 	// Create a channel for waiting on Interrupt
-	stop := make(chan os.Signal)
-	// Use stop channel for os.Interrupt
-	signal.Notify(stop, os.Interrupt)
+	stop := make(chan os.Signal, 1)
+	// interrupt signal sent from terminal or Kubernetes
+	signal.Notify(stop, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	// Wait on a signal from stop channel
 	<-stop
 	// Cleanup tasks now that we recieved os.Interrupt

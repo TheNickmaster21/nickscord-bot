@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Service                    
+metadata:
+  name: nickscord-service   
+spec:
+  type: NodePort                 # A port is opened on each node in your cluster via Kube proxy.
+  ports:                         # Take incoming HTTP requests on port 80 and forward them to the targetPort of 80
+  - name: http
+    port: 80
+    targetPort: 80
+  selector:
+    app: nickscord-bot         # Map any pod with label `app: nickscord-bot` to this service
+
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: nickscord-bot
+  namespace: default
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      app: nickscord-bot
+  template:
+    metadata:
+      labels:
+        app: nickscord-bot
+    spec:
+      containers:
+        - name: nickscord-bot
+          image: registry.digitalocean.com/nmain/nickscord-bot
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          imagePullPolicy: Always
+          env:
+            - name: BOT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: nickscord-bot
+                  key: bot_token
+            - name: GUILD_ID
+              value: "559936001305214997"
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      schedulerName: default-scheduler
